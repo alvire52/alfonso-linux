@@ -1,0 +1,18 @@
+#!/bin/sh
+# Configurazioni di sistema: firewall, saluto nel terminale.
+set -e
+
+# Firewall attivo all'avvio (nega in ingresso, consente in uscita)
+if [ -f /etc/ufw/ufw.conf ]; then
+  sed -i 's/^ENABLED=.*/ENABLED=yes/' /etc/ufw/ufw.conf
+  systemctl enable ufw.service || true
+fi
+
+# fastfetch all'apertura di un terminale interattivo
+cat > /etc/profile.d/zz-@DISTRO_ID@-welcome.sh <<'EOF'
+case $- in *i*) command -v fastfetch >/dev/null && fastfetch ;; esac
+EOF
+
+# Pulizia
+apt-get clean
+rm -rf /var/lib/apt/lists/* /tmp/*

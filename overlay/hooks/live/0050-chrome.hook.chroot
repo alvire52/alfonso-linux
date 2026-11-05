@@ -1,0 +1,24 @@
+#!/bin/sh
+# Google Chrome dal pacchetto ufficiale. Il pacchetto aggiunge da solo
+# il repository Google, così Chrome si aggiorna con apt.
+set -e
+[ "@INSTALL_CHROME@" = "yes" ] || exit 0
+
+cd /tmp
+wget -q -O chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y ./chrome.deb
+rm -f chrome.deb
+
+# Chrome come browser predefinito
+update-alternatives --set x-www-browser /usr/bin/google-chrome-stable || true
+update-alternatives --set gnome-www-browser /usr/bin/google-chrome-stable || true
+mkdir -p /etc/xdg
+cat > /etc/xdg/mimeapps.list <<'EOF'
+[Default Applications]
+text/html=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+EOF

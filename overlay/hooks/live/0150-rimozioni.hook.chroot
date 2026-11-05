@@ -1,0 +1,13 @@
+#!/bin/sh
+# Rimuove i programmi indesiderati che il desktop installa di default.
+# Niente autoremove, così non si trascinano via altri pacchetti.
+set -e
+
+PKGS=""
+for p in @REMOVE_PACKAGES@; do
+  dpkg -s "$p" >/dev/null 2>&1 && PKGS="$PKGS $p"
+done
+# Pacchetti collegati (lingue, ecc.)
+PKGS="$PKGS $(dpkg-query -W -f='${Package}\n' 'firefox-esr-l10n-*' 'thunderbird-l10n-*' 'gimp-*' 2>/dev/null | tr '\n' ' ')"
+
+[ -n "$(echo $PKGS)" ] && DEBIAN_FRONTEND=noninteractive apt-get purge -y $PKGS || true

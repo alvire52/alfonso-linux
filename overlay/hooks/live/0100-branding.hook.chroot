@@ -1,0 +1,37 @@
+#!/bin/sh
+# Branding: nome della distro in os-release, login, GRUB e installer.
+set -e
+
+NAME="@DISTRO_NAME@"
+ID="@DISTRO_ID@"
+VER="@DISTRO_VERSION@"
+
+# os-release (ID=debian e ID_LIKE restano per compatibilità con i software)
+OSR=/usr/lib/os-release
+sed -i \
+  -e "s|^PRETTY_NAME=.*|PRETTY_NAME=\"$NAME $VER (basata su Debian 13)\"|" \
+  -e "s|^NAME=.*|NAME=\"$NAME\"|" "$OSR"
+grep -q '^ID_LIKE=' "$OSR" || echo 'ID_LIKE=debian' >> "$OSR"
+grep -q '^VARIANT_ID=' "$OSR" || echo "VARIANT_ID=$ID" >> "$OSR"
+
+# Schermata di login testuale
+printf '%s %s \\n \\l\n\n' "$NAME" "$VER" > /etc/issue
+printf '%s %s\n' "$NAME" "$VER" > /etc/issue.net
+
+# Nome nel menu di GRUB del sistema installato
+if [ -f /etc/default/grub ]; then
+  sed -i "s|^GRUB_DISTRIBUTOR=.*|GRUB_DISTRIBUTOR=\"$NAME\"|" /etc/default/grub
+fi
+
+# Branding dell'installer Calamares
+BD=/etc/calamares/branding/debian/branding.desc
+if [ -f "$BD" ]; then
+  sed -i -E \
+    -e "s|^(\s*productName:).*|\1 \"$NAME\"|" \
+    -e "s|^(\s*shortProductName:).*|\1 \"$NAME\"|" \
+    -e "s|^(\s*version:).*|\1 \"$VER\"|" \
+    -e "s|^(\s*shortVersion:).*|\1 \"$VER\"|" \
+    -e "s|^(\s*versionedName:).*|\1 \"$NAME $VER\"|" \
+    -e "s|^(\s*shortVersionedName:).*|\1 \"$NAME $VER\"|" \
+    -e "s|^(\s*bootloaderEntryName:).*|\1 \"$NAME\"|" "$BD"
+fi

@@ -1,0 +1,40 @@
+#!/bin/sh
+# Flathub + app Flatpak (JDownloader 2).
+# Prova a installarle già nella ISO. Se nel chroot non è possibile,
+# attiva un servizio che le installa al primo avvio con internet.
+set -e
+
+APPS="@FLATPAKS@"
+flatpak remote-add --if-not-exists --system flathub \
+  https://dl.flathub.org/repo/flathub.flatpakrepo
+
+[ -n "$APPS" ] || exit 0
+
+if flatpak install --system --noninteractive -y flathub $APPS; then
+  echo "Flatpak installati nella ISO: $APPS"
+  exit 0
+fi
+
+echo "Installazione Flatpak nel chroot fallita: la rimando al primo avvio"
+cat > /usr/local/sbin/flatpak-primo-avvio <<EOF
+#!/bin/sh
+flatpak install --system --noninteractive -y flathub $APPS && \
+  mkdir -p /var/lib/@DISTRO_ID@ && touch /var/lib/@DISTRO_ID@/flatpak-ok
+EOF
+chmod +x /usr/local/sbin/flatpak-primo-avvio
+
+cat > /etc/systemd/system/flatpak-primo-avvio.service <<'EOF'
+[Unit]
+Description=Installa le app Flatpak predefinite
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=!/var/lib/@DISTRO_ID@/flatpak-ok
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/flatpak-primo-avvio
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable flatpak-primo-avvio.service

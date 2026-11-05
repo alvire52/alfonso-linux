@@ -1,0 +1,25 @@
+# Sistema live
+live-boot
+live-config
+live-config-systemd
+
+# Installer grafico
+calamares
+calamares-settings-debian
+
+# Bootloader per il sistema installato
+grub-efi-amd64-bin
+grub-pc-bin
+efibootmgr
+shim-signed
+
+# Hardware e rete
+firmware-linux
+firmware-misc-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+network-manager
+bluez
+fwupd
+cups

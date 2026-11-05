@@ -1,0 +1,31 @@
+#!/bin/sh
+# Icone stile Apple: WhiteSur icon theme (github.com/vinceliuice/WhiteSur-icon-theme)
+set -e
+
+THEME="@ICON_THEME@"
+TMP=$(mktemp -d)
+wget -q -O "$TMP/ws.tar.gz" \
+  https://github.com/vinceliuice/WhiteSur-icon-theme/archive/refs/heads/master.tar.gz
+tar -xzf "$TMP/ws.tar.gz" -C "$TMP"
+cd "$TMP"/WhiteSur-icon-theme-*
+./install.sh -d /usr/share/icons
+cd /
+rm -rf "$TMP"
+
+for d in /usr/share/icons/WhiteSur*; do
+  gtk-update-icon-cache -f -q "$d" 2>/dev/null || true
+done
+
+# Tema predefinito per KDE Plasma (vale per tutti gli utenti)
+mkdir -p /etc/xdg
+if grep -q '^\[Icons\]' /etc/xdg/kdeglobals 2>/dev/null; then
+  sed -i "/^\[Icons\]/,/^\[/ s|^Theme=.*|Theme=$THEME|" /etc/xdg/kdeglobals
+else
+  printf '\n[Icons]\nTheme=%s\n' "$THEME" >> /etc/xdg/kdeglobals
+fi
+
+# ...e per le applicazioni GTK
+for v in gtk-3.0 gtk-4.0; do
+  mkdir -p /etc/$v
+  printf '[Settings]\ngtk-icon-theme-name=%s\n' "$THEME" > /etc/$v/settings.ini
+done
