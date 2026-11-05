@@ -19,7 +19,7 @@ fi
 # --- Pacchetti del desktop ----------------------------------------------------
 case "$DESKTOP" in
   gnome)    DE_PKGS="task-gnome-desktop gnome-software-plugin-flatpak" ;;
-  kde)      DE_PKGS="task-kde-desktop plasma-discover-backend-flatpak" ;;
+  kde)      DE_PKGS="task-kde-desktop plasma-discover-backend-flatpak sddm-theme-breeze" ;;
   xfce)     DE_PKGS="task-xfce-desktop" ;;
   cinnamon) DE_PKGS="task-cinnamon-desktop" ;;
   mate)     DE_PKGS="task-mate-desktop" ;;
@@ -70,6 +70,7 @@ grep -rlZ '@[A-Z_]*@' config/ 2>/dev/null | while IFS= read -r -d '' f; do
     -e "s|@DISTRO_ID@|$DISTRO_ID|g" \
     -e "s|@DISTRO_VERSION@|$DISTRO_VERSION|g" \
     -e "s|@DESKTOP@|$DESKTOP|g" \
+    -e "s|@KEYMAP@|$KEYMAP|g" \
     -e "s|@ICON_THEME@|$ICON_THEME|g" \
     -e "s|@REMOVE_PACKAGES@|$REMOVE_PACKAGES|g" \
     -e "s|@FLATPAKS@|$FLATPAKS|g" \

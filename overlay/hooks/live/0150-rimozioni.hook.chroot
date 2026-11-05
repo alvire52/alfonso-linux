@@ -3,6 +3,17 @@
 # Niente autoremove, così non si trascinano via altri pacchetti.
 set -e
 
+# Alcuni programmi da togliere fanno parte dei pacchetti "raccolta" di KDE:
+# toglierli rimuove anche la raccolta, e un successivo "apt autoremove"
+# cancellerebbe tutto quello che la raccolta aveva portato (mezzo desktop).
+# Per evitarlo, prima si segnano come installati a mano i suoi componenti.
+META="task-kde-desktop kde-standard kde-plasma-desktop kde-baseapps task-desktop"
+KEEP=""
+for p in $(apt-cache depends $META 2>/dev/null | awk '/Depends:|Recommends:/ {print $2}' | grep -v '^<' | sort -u); do
+  dpkg -s "$p" >/dev/null 2>&1 && KEEP="$KEEP $p"
+done
+[ -n "$(echo $KEEP)" ] && apt-mark manual $KEEP >/dev/null
+
 PKGS=""
 for p in @REMOVE_PACKAGES@; do
   dpkg -s "$p" >/dev/null 2>&1 && PKGS="$PKGS $p"
@@ -10,4 +21,20 @@ done
 # Pacchetti collegati (lingue, ecc.)
 PKGS="$PKGS $(dpkg-query -W -f='${Package}\n' 'firefox-esr-l10n-*' 'thunderbird-l10n-*' 'gimp-*' 2>/dev/null | tr '\n' ' ')"
 
-[ -n "$(echo $PKGS)" ] && DEBIAN_FRONTEND=noninteractive apt-get purge -y $PKGS || true
+[ -n "$(echo $PKGS)" ] || exit 0
+echo "Rimozione di:$PKGS"
+
+# Prova a vuoto: se apt toglierebbe anche pacchetti fuori dalla lista
+# (a parte le raccolte e il pacchetto "libreoffice" completo), si ferma la build.
+ALLOWED=" $PKGS $META libreoffice "
+EXTRA=""
+for p in $(apt-get -s purge $PKGS | awk '/^Purg / {print $2}'); do
+  case "$ALLOWED" in *" $p "*) ;; *) EXTRA="$EXTRA $p" ;; esac
+done
+if [ -n "$EXTRA" ]; then
+  echo "ERRORE: la rimozione toglierebbe anche:$EXTRA"
+  echo "Aggiungili a REMOVE_PACKAGES in distro.conf se vanno tolti, altrimenti togli dalla lista il programma che li trascina."
+  exit 1
+fi
+
+DEBIAN_FRONTEND=noninteractive apt-get purge -y $PKGS

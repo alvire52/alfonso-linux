@@ -8,6 +8,27 @@ if [ -f /etc/ufw/ufw.conf ]; then
   systemctl enable ufw.service || true
 fi
 
+# Schermata di accesso: tema Breeze (senza, SDDM mostra un tema spoglio)
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/10-@DISTRO_ID@.conf <<'EOF'
+[Theme]
+Current=breeze
+EOF
+
+# Tastiera italiana anche nella schermata di accesso (prima era "us")
+mkdir -p /etc/X11/xorg.conf.d
+cat > /etc/X11/xorg.conf.d/00-keyboard.conf <<'EOF'
+Section "InputClass"
+        Identifier "system-keyboard"
+        MatchIsKeyboard "on"
+        Option "XkbLayout" "@KEYMAP@"
+EndSection
+EOF
+
+# Sistema installato su chiavetta: GRUB aggiorna anche EFI/BOOT/BOOTX64.EFI,
+# così la chiavetta continua ad avviarsi su qualunque PC dopo gli aggiornamenti
+echo "grub-efi-amd64 grub2/force_efi_extra_removable boolean true" | debconf-set-selections
+
 # fastfetch all'apertura di un terminale interattivo
 cat > /etc/profile.d/zz-@DISTRO_ID@-welcome.sh <<'EOF'
 case $- in *i*) command -v fastfetch >/dev/null && fastfetch ;; esac
